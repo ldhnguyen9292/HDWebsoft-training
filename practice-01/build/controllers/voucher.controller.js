@@ -35,21 +35,144 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.voucherController = void 0;
+var email_queue_1 = require("./../queues/email.queue");
+var voucher_model_1 = require("./../models/voucher.model");
+var boom_1 = __importDefault(require("@hapi/boom"));
+var event_model_1 = require("./../models/event.model");
+var mongoose_1 = __importDefault(require("mongoose"));
+var referral_codes_1 = __importDefault(require("referral-codes"));
 // Get voucher by code
-var getVoucher = function (request, h) { return __awaiter(void 0, void 0, void 0, function () {
-    var code;
+var findVoucherById = function (request, h) { return __awaiter(void 0, void 0, void 0, function () {
+    var code, voucher;
     return __generator(this, function (_a) {
-        code = request.params.code;
-        return [2 /*return*/, code];
+        switch (_a.label) {
+            case 0:
+                code = request.params.code;
+                return [4 /*yield*/, voucher_model_1.voucherModel.findOne({ code: code })];
+            case 1:
+                voucher = _a.sent();
+                if (!voucher)
+                    return [2 /*return*/, h.response({ message: "Voucher not found" }).code(404)];
+                return [2 /*return*/, h.response(voucher).code(200)];
+        }
     });
 }); };
-var postVoucher = function (request, h) { return __awaiter(void 0, void 0, void 0, function () {
-    var payload;
+// Generate voucher
+var generateVoucher = function (event_id, email, session) { return __awaiter(void 0, void 0, void 0, function () {
+    var code, newVoucher;
     return __generator(this, function (_a) {
-        payload = request.payload;
-        return [2 /*return*/, payload];
+        code = referral_codes_1.default.generate({
+            count: 1,
+            length: 10,
+            charset: "0123456789",
+            prefix: "TT-"
+        });
+        newVoucher = voucher_model_1.voucherModel.create([{
+                event_id: event_id,
+                name: "Voucher Tết trung thu",
+                description: "Voucher c\u00F3 gi\u00E1 tr\u1ECB gi\u1EA3m gi\u00E1 " + Math.ceil(Math.random() * 50) + "%",
+                email: email,
+                code: code[0]
+            }], { session: session });
+        return [2 /*return*/, newVoucher];
     });
 }); };
-exports.voucherController = { getVoucher: getVoucher, postVoucher: postVoucher };
+function commitWithRetry(session) {
+    return __awaiter(this, void 0, void 0, function () {
+        var error_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 2, , 6]);
+                    return [4 /*yield*/, session.commitTransaction()];
+                case 1:
+                    _a.sent();
+                    console.log('Transaction committed.');
+                    return [3 /*break*/, 6];
+                case 2:
+                    error_1 = _a.sent();
+                    if (!(error_1.errorLabels &&
+                        error_1.errorLabels.indexOf('UnknownTransactionCommitResult') >= 0)) return [3 /*break*/, 4];
+                    console.log('UnknownTransactionCommitResult, retrying commit operation ...');
+                    return [4 /*yield*/, commitWithRetry(session)];
+                case 3:
+                    _a.sent();
+                    return [3 /*break*/, 5];
+                case 4:
+                    console.log('Error during commit ...');
+                    throw error_1;
+                case 5: return [3 /*break*/, 6];
+                case 6: return [2 /*return*/];
+            }
+        });
+    });
+}
+function delay(ms) {
+    return new Promise(function (resolve) { return setTimeout(resolve, ms); });
+}
+// Control voucher generation
+var controlVoucherGeneration = function (request, h) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, event_id, email, session, event, newVoucher, error_2;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _a = request.payload, event_id = _a.event_id, email = _a.email;
+                return [4 /*yield*/, mongoose_1.default.startSession()];
+            case 1:
+                session = _b.sent();
+                _b.label = 2;
+            case 2:
+                _b.trys.push([2, 12, , 14]);
+                session.startTransaction();
+                return [4 /*yield*/, event_model_1.eventModel.findById(event_id).session(session)];
+            case 3:
+                event = _b.sent();
+                if (!!event) return [3 /*break*/, 5];
+                return [4 /*yield*/, session.abortTransaction()];
+            case 4:
+                _b.sent();
+                return [2 /*return*/, boom_1.default.notFound('Event not found')];
+            case 5:
+                if (!(event.max_quantity <= 0)) return [3 /*break*/, 7];
+                return [4 /*yield*/, session.abortTransaction()];
+            case 6:
+                _b.sent();
+                return [2 /*return*/, boom_1.default.boomify(new Error('Quantity of voucher is over'), { statusCode: 456 })];
+            case 7:
+                // Delay random
+                // const random = Math.random() * 20000
+                // console.log(random)
+                // await delay(random)
+                event.max_quantity--;
+                return [4 /*yield*/, event.save()
+                    // Create voucher
+                ];
+            case 8:
+                _b.sent();
+                return [4 /*yield*/, generateVoucher(event_id, email, session)];
+            case 9:
+                newVoucher = _b.sent();
+                return [4 /*yield*/, commitWithRetry(session)];
+            case 10:
+                _b.sent();
+                return [4 /*yield*/, session.endSession()];
+            case 11:
+                _b.sent();
+                email_queue_1.addEmailToQueue(email, newVoucher);
+                return [2 /*return*/, h.response(newVoucher).code(201)];
+            case 12:
+                error_2 = _b.sent();
+                return [4 /*yield*/, session.abortTransaction()];
+            case 13:
+                _b.sent();
+                return [2 /*return*/, h.response({ message: error_2 }).code(456)];
+            case 14: return [2 /*return*/];
+        }
+    });
+}); };
+exports.voucherController = { findVoucherById: findVoucherById, controlVoucherGeneration: controlVoucherGeneration };

@@ -19,7 +19,7 @@ exports.eventRouter = [{
     }, {
         method: "PUT",
         path: "/event/{id}",
-        handler: event_controller_1.eventController.postEvent,
+        handler: event_controller_1.eventController.updateEvent,
         options: {
             validate: {
                 payload: event_model_1.eventValid,
