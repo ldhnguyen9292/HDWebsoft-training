@@ -37,40 +37,111 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.eventController = void 0;
+var event_model_1 = require("./../models/event.model");
 // List events
-var getEvents = function (request, h) { return __awaiter(void 0, void 0, void 0, function () {
+var getEvents = function (quest, h) { return __awaiter(void 0, void 0, void 0, function () {
+    var events;
     return __generator(this, function (_a) {
-        return [2 /*return*/, "get all events"];
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, event_model_1.eventModel.find({})];
+            case 1:
+                events = _a.sent();
+                return [2 /*return*/, h.response(events).code(200)];
+        }
     });
 }); };
 // Get event by id
 var getEventById = function (request, h) { return __awaiter(void 0, void 0, void 0, function () {
+    var id, event, error_1;
     return __generator(this, function (_a) {
-        return [2 /*return*/, "get event by id"];
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                id = request.params.id;
+                return [4 /*yield*/, event_model_1.eventModel.findById(id)];
+            case 1:
+                event = _a.sent();
+                if (!event)
+                    return [2 /*return*/, h.response({ message: "Event not found" }).code(404)];
+                return [2 /*return*/, h.response(event).code(200)];
+            case 2:
+                error_1 = _a.sent();
+                h.response({ message: error_1 }).code(500);
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
     });
 }); };
 // Create one event
 var postEvent = function (request, h) { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        try {
-            return [2 /*return*/, "post"];
+    var _a, name, description, max_quantity, newEvent, error_2;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 2, , 3]);
+                _a = request.payload, name = _a.name, description = _a.description, max_quantity = _a.max_quantity;
+                newEvent = new event_model_1.eventModel({ name: name, description: description, max_quantity: max_quantity });
+                return [4 /*yield*/, newEvent.save()];
+            case 1:
+                _b.sent();
+                return [2 /*return*/, h.response(newEvent).code(201)];
+            case 2:
+                error_2 = _b.sent();
+                return [2 /*return*/, h.response({ message: error_2 }).code(500)];
+            case 3: return [2 /*return*/];
         }
-        catch (error) {
-            return [2 /*return*/, h.response({ message: error }).code(500)];
-        }
-        return [2 /*return*/];
     });
 }); };
 // Update event
 var updateEvent = function (request, h) { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        return [2 /*return*/, "update event"];
+    var id, _a, name, description, max_quantity, event, error_3;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 3, , 4]);
+                id = request.params.id;
+                _a = request.payload, name = _a.name, description = _a.description, max_quantity = _a.max_quantity;
+                return [4 /*yield*/, event_model_1.eventModel.findById(id)];
+            case 1:
+                event = _b.sent();
+                if (!event)
+                    return [2 /*return*/, h.response({ message: "Event not found" }).code(404)];
+                event.name = name;
+                event.description = description;
+                event.max_quantity = max_quantity;
+                return [4 /*yield*/, event.save()];
+            case 2:
+                _b.sent();
+                return [2 /*return*/, event];
+            case 3:
+                error_3 = _b.sent();
+                h.response({ message: error_3 }).code(500);
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
+        }
     });
 }); };
 // Delete event
 var deleteEventById = function (request, h) { return __awaiter(void 0, void 0, void 0, function () {
+    var id, event, error_4;
     return __generator(this, function (_a) {
-        return [2 /*return*/, "delete event by id"];
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                id = request.params.id;
+                return [4 /*yield*/, event_model_1.eventModel.findById(id)];
+            case 1:
+                event = _a.sent();
+                if (!event)
+                    return [2 /*return*/, h.response({ message: "Event not found" }).code(404)];
+                event.delete();
+                return [2 /*return*/, h.response({ message: "Delete event successfully" }).code(200)];
+            case 2:
+                error_4 = _a.sent();
+                h.response({ message: error_4 }).code(500);
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
     });
 }); };
 exports.eventController = { getEvents: getEvents, postEvent: postEvent, getEventById: getEventById, updateEvent: updateEvent, deleteEventById: deleteEventById };

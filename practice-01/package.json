@@ -7,17 +7,25 @@
     "@hapi/boom": "^9.1.4",
     "@hapi/hapi": "^20.2.0",
     "agenda": "^4.2.1",
+    "bull": "^3.29.2",
+    "couponjs": "^0.8.19",
     "joi": "^17.4.2",
     "mongoose": "^6.0.8",
+    "nodemailer": "^6.6.5",
     "nodemon": "^2.0.13",
-    "typescript": "^4.4.3"
+    "referral-codes": "^1.0.2",
+    "typescript": "^4.4.3",
+    "voucher-code-generator": "^1.1.1"
   },
   "devDependencies": {
     "@types/boom": "^7.3.1",
+    "@types/bull": "^3.15.5",
     "@types/hapi": "^18.0.6",
     "@types/hapi__hapi": "^20.0.9",
     "@types/mongoose": "^5.11.97",
     "@types/node": "^16.10.2",
+    "@types/nodemailer": "^6.4.4",
+    "@types/voucher-code-generator": "^1.1.1",
     "rimraf": "^3.0.2"
   },
   "scripts": {

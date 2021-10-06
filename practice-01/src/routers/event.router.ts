@@ -19,7 +19,7 @@ export const eventRouter: ServerRoute[] = [{
 }, {
     method: "PUT",
     path: "/event/{id}",
-    handler: eventController.postEvent,
+    handler: eventController.updateEvent,
     options: {
         validate: {
             payload: eventValid,

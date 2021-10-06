@@ -1,4 +1,4 @@
 {
-    "url": "mongodb://localhost:27017/voucher-app",
-    "atlasUrl": "mongodb+srv://nguyenle9292:Heoden9292@cluster0.aswp4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+    "url": "mongodb://localhost:27017/voucherApp",
+    "atlasUrl": "mongodb+srv://nguyenle9292:Heoden9292@cluster0.aswp4.mongodb.net/voucherApp?retryWrites=true&w=majority"
 }
