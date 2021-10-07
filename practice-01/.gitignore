@@ -1,4 +1,4 @@
-# dependencies
-/node_modules
-/src/config
-/build/config
+node_modules
+src/config
+build
+
