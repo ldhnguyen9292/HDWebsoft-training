@@ -4,6 +4,7 @@ import GGConfig from './../config/ggconfig.json'
 
 const emailQueue = new Queue('sending-email', 'redis://127.0.0.1:6379')
 
+// Sending email by using nodemailer
 const sendingEmail = async (email: string, code: string) => {
     let transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
@@ -31,14 +32,16 @@ const delay = (n: number) => {
     return new Promise(resolve => setTimeout(resolve, n))
 }
 
+// Define email queue
 emailQueue.process(async (job, done) => {
     const { email, code } = job.data
     await sendingEmail(email, code)
-    await delay(Math.random() * 10000)
+    await delay(Math.random() * 1000)
     done()
     done(new Error('Sending error'))
 })
 
+// Add email to queue
 export const addEmailToQueue = async (email: string, code: string) => {
     emailQueue.add({ email, code })
 }

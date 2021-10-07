@@ -3,6 +3,8 @@ import { Lifecycle } from '@hapi/hapi';
 import Boom from "@hapi/boom"
 import { eventModel } from "../models/event.model"
 
+// Create middleware to check max_quantity of event first 
+// If max_quantity = 0, return error immediately
 export const isVoucherOver: Lifecycle.Method = async (request, h) => {
     //C1
     // const { event_id } = request.payload as unknown as { event_id: string }

@@ -17,6 +17,7 @@ const findVoucherById: Lifecycle.Method = async (request, h) => {
 
 // Generate voucher
 const generateVoucher = async (event_id: string, email: string, session: ClientSession) => {
+    // Random voucher code by using referralCodes lib
     const codeList = referralCodes.generate({
         count: 1,
         length: 10,
@@ -24,6 +25,7 @@ const generateVoucher = async (event_id: string, email: string, session: ClientS
         prefix: "TT-"
     })
 
+    // Create new voucher
     const newVoucher = await voucherModel.create([{
         event_id,
         name: "Voucher Tết trung thu",
@@ -34,6 +36,7 @@ const generateVoucher = async (event_id: string, email: string, session: ClientS
     return newVoucher
 }
 
+// Retry to commit transaction
 async function commitWithRetry(session: ClientSession) {
     try {
         await session.commitTransaction();
@@ -52,6 +55,7 @@ async function commitWithRetry(session: ClientSession) {
     }
 }
 
+// Delay
 function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -63,22 +67,25 @@ const controlVoucherGeneration: Lifecycle.Method = async (request, h) => {
     try {
         session.startTransaction()
         const event = await eventModel.findById(event_id).session(session)
+        // Event exsist?
         if (!event) {
             await session.abortTransaction()
             return Boom.notFound('Event not found')
         }
-        // Compare quantity and voucher count
+        // Check max_quantity
         if (event.max_quantity <= 0) {
             await session.abortTransaction()
             return Boom.boomify(new Error('Quantity of voucher is over'), { statusCode: 456 })
         }
-        // Delay random
+        // Delay random to check transaction
         // const random = Math.random() * 20000
         // console.log(random)
         // await delay(random)
 
+        // Minus quantity
         event.max_quantity--
         await event.save()
+
         // Create voucher
         const newVoucher = await generateVoucher(event_id, email, session)
 
