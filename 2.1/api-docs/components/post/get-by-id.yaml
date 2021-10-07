@@ -1,0 +1,15 @@
+tags:
+  - posts
+summary: Get post by id
+description: Detail...
+parameters:
+  - in: path
+    name: id
+    type: number
+    required: true
+    description: Numeric ID of the post to get.
+responses:
+  '200':
+    description: Return user info
+  default:
+    description: Unknown error

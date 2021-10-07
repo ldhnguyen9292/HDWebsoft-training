@@ -1,0 +1,16 @@
+tags:
+  - users
+summary: Update user info
+description: Optional extended description in CommonMark or HTML.
+requestBody:
+  description: User info to update
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: "../../schemas/userUpdate.yaml"
+responses:
+  "201":
+    description: Update user info success
+  default:
+    description: Unknown error

@@ -1,0 +1,4 @@
+get:
+  $ref: '../components/post/get-all.yaml'
+post:
+  $ref: '../components/post/add-post.yaml'

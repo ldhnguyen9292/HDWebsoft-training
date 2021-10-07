@@ -1,4 +1,3 @@
 node_modules/
-jsFiles/playround/
-jsFiles/index.js
+jsFiles/
 playround/mongodb.json

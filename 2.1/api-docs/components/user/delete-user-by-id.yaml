@@ -1,0 +1,17 @@
+tags:
+  - users
+summary: Delete a user by ID.
+description: Optional extended description in CommonMark or HTML.
+parameters:
+  - in: path
+    name: userId
+    type: number
+    required: true
+    description: Numeric ID of the user to get.
+responses: 
+  '201':    # status code
+    description: Delete successfully
+  '400':
+    description: User not found
+  default:
+    description: Unknown error

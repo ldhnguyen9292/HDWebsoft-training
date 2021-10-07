@@ -1,0 +1,27 @@
+openapi: 3.0.0
+info:
+  title: test swagger
+  description: Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.
+  version: 0.0.1
+servers:
+  - url: http://localhost:8888/api/v1
+    description: Optional server description, e.g. Main (production) server
+
+paths:
+  /user:
+    $ref: './paths/user.yaml'
+  /user/{userId}:
+    $ref: './paths/user-by-id.yaml'
+  /post:
+    $ref: './paths/post.yaml'
+  /post/{id}:
+    $ref: './paths/post-by-id.yaml'
+    
+components:
+  schemas:
+    Post:
+      $ref: './schemas/post.yaml'
+    UserPost: 
+      $ref: './schemas/userPost.yaml'
+    UserUpdate:
+      $ref: './schemas/userUpdate.yaml'

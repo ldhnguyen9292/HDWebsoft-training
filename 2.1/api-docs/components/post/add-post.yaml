@@ -1,0 +1,16 @@
+tags:
+  - posts
+summary: Add one post
+description: Optional extended description in CommonMark or HTML.
+requestBody:
+  description: Post info
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '../../schemas/post.yaml'
+responses:
+  '201': 
+    description: Add post successfully
+  default:
+    description: Unknown error

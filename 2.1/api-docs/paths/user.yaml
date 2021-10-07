@@ -1,0 +1,6 @@
+get:
+ $ref: '../components/user/get-all.yaml'
+post:
+ $ref: '../components/user/add-user.yaml'
+put:
+ $ref: '../components/user/update-user.yaml'

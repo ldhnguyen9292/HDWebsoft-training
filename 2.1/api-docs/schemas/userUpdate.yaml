@@ -1,0 +1,8 @@
+allOf:
+  - $ref: './userPost.yaml'
+  - type: object
+    properties:
+      userId:
+        type: number
+    required:
+      - userId

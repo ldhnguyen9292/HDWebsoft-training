@@ -1,0 +1,4 @@
+delete:
+  $ref: '../components/user/delete-user-by-id.yaml'
+get:
+  $ref: '../components/user/get-user-by-id.yaml'

@@ -1,0 +1,15 @@
+tags:
+- users
+summary: Get user by id
+description: Optional extended description in CommonMark or HTML.
+parameters:
+  - in : path
+    name: userId
+    type: number
+    required: true
+    description: Numeric ID of the user to get.
+responses:
+  "200":
+    description: Get user info success
+  default:
+    description: Unknown error

@@ -1,0 +1,16 @@
+tags:
+  - users
+summary: Create new user info.
+description: Optional extended description in CommonMark or HTML.
+requestBody:
+  description: Optional description in *Markdown*
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '../../schemas/userPost.yaml'
+responses:
+  '200':    # status code
+    description: Created successfully
+  default: 
+    description: Unknown error
