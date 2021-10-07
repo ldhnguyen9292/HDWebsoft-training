@@ -1,14 +1,14 @@
 import { addEmailToQueue } from './../queues/email.queue';
-import { voucherModel } from './../models/voucher.model';
+import { voucherModel, codeValid } from './../models/voucher.model';
 import Boom from "@hapi/boom";
-import { Voucher, VoucherRequest } from './../interfaces/voucher.interface';
-import { ResponseToolkit } from '@hapi/hapi'
+import { Voucher, VoucherPayLoad } from './../interfaces/voucher.interface';
+import { Lifecycle } from '@hapi/hapi'
 import { eventModel } from './../models/event.model'
 import mongoose, { ClientSession } from 'mongoose';
 import referralCodes from 'referral-codes'
 
 // Get voucher by code
-const findVoucherById = async (request: VoucherRequest, h: ResponseToolkit) => {
+const findVoucherById: Lifecycle.Method = async (request, h) => {
     const code = request.params.code;
     const voucher = await voucherModel.findOne({ code })
     if (!voucher) return h.response({ message: "Voucher not found" }).code(404)
@@ -17,19 +17,19 @@ const findVoucherById = async (request: VoucherRequest, h: ResponseToolkit) => {
 
 // Generate voucher
 const generateVoucher = async (event_id: string, email: string, session: ClientSession) => {
-    const code = referralCodes.generate({
+    const codeList = referralCodes.generate({
         count: 1,
         length: 10,
         charset: "0123456789",
         prefix: "TT-"
     })
 
-    const newVoucher = voucherModel.create([{
+    const newVoucher = await voucherModel.create([{
         event_id,
         name: "Voucher Tết trung thu",
         description: `Voucher có giá trị giảm giá ${Math.ceil(Math.random() * 50)}%`,
         email,
-        code: code[0]
+        code: codeList[0]
     }], { session })
     return newVoucher
 }
@@ -57,8 +57,8 @@ function delay(ms: number) {
 }
 
 // Control voucher generation
-const controlVoucherGeneration = async (request: VoucherRequest, h: ResponseToolkit) => {
-    const { event_id, email } = request.payload
+const controlVoucherGeneration: Lifecycle.Method = async (request, h) => {
+    const { event_id, email } = request.payload as VoucherPayLoad
     const session = await mongoose.startSession()
     try {
         session.startTransaction()
@@ -84,7 +84,7 @@ const controlVoucherGeneration = async (request: VoucherRequest, h: ResponseTool
 
         await commitWithRetry(session)
         await session.endSession()
-        addEmailToQueue(email, newVoucher)
+        addEmailToQueue(email, newVoucher[0].code)
         return h.response(newVoucher).code(201)
     } catch (error) {
         await session.abortTransaction()

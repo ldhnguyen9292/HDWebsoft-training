@@ -1,15 +1,15 @@
 import { eventModel } from './../models/event.model';
-import { Request, ResponseToolkit } from '@hapi/hapi';
-import { EventRequest } from '../interfaces/event.interface';
+import { Lifecycle } from '@hapi/hapi';
+import { EventPayLoad } from '../interfaces/event.interface';
 
 // List events
-const getEvents = async (quest: Request, h: ResponseToolkit) => {
+const getEvents: Lifecycle.Method = async (request, h) => {
     const events = await eventModel.find({})
     return h.response(events).code(200)
 }
 
 // Get event by id
-const getEventById = async (request: Request, h: ResponseToolkit) => {
+const getEventById: Lifecycle.Method = async (request, h) => {
     try {
         const { id } = request.params
         const event = await eventModel.findById(id)
@@ -21,9 +21,9 @@ const getEventById = async (request: Request, h: ResponseToolkit) => {
 }
 
 // Create one event
-const postEvent = async (request: EventRequest, h: ResponseToolkit) => {
+const postEvent: Lifecycle.Method = async (request, h) => {
     try {
-        const { name, description, max_quantity } = request.payload
+        const { name, description, max_quantity } = request.payload as EventPayLoad
         const newEvent = new eventModel({ name, description, max_quantity })
         await newEvent.save()
         return h.response(newEvent).code(201)
@@ -33,10 +33,10 @@ const postEvent = async (request: EventRequest, h: ResponseToolkit) => {
 }
 
 // Update event
-const updateEvent = async (request: EventRequest, h: ResponseToolkit) => {
+const updateEvent: Lifecycle.Method = async (request, h) => {
     try {
         const { id } = request.params
-        const { name, description, max_quantity } = request.payload
+        const { name, description, max_quantity } = request.payload as EventPayLoad
         const event = await eventModel.findById(id)
         if (!event) return h.response({ message: "Event not found" }).code(404)
         event.name = name
@@ -50,7 +50,7 @@ const updateEvent = async (request: EventRequest, h: ResponseToolkit) => {
 }
 
 // Delete event
-const deleteEventById = async (request: EventRequest, h: ResponseToolkit) => {
+const deleteEventById: Lifecycle.Method = async (request, h) => {
     try {
         const { id } = request.params
         const event = await eventModel.findById(id)

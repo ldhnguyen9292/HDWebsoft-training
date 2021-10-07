@@ -1,10 +1,13 @@
+import { VoucherPayLoad } from './../interfaces/voucher.interface';
+import { Lifecycle } from '@hapi/hapi';
 import Boom from "@hapi/boom"
-import { MidllewarePayload, VoucherMethod } from "../interfaces/voucher.interface"
 import { eventModel } from "../models/event.model"
 
-export const isVoucherOver: VoucherMethod = async (request, h) => {
-    // Làm sao interface lại được payload
-    const { event_id }: any = request.payload
+export const isVoucherOver: Lifecycle.Method = async (request, h) => {
+    //C1
+    // const { event_id } = request.payload as unknown as { event_id: string }
+    //C2
+    const { event_id } = request.payload as VoucherPayLoad
     const event = await eventModel.findById(event_id)
     if (!event) return Boom.notFound('Event not found')
     if (event.max_quantity === 0) {

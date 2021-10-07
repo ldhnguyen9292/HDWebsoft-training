@@ -1,6 +1,6 @@
 import Joi from 'joi'
 import { Schema, model } from 'mongoose';
-import { Voucher } from '../interfaces/voucher.interface';
+import { Voucher, VoucherModel } from '../interfaces/voucher.interface';
 
 const voucherSchema = new Schema<Voucher>({
     event_id: { type: 'ObjectId', ref: "event", required: true },
@@ -12,7 +12,7 @@ const voucherSchema = new Schema<Voucher>({
     timestamps: true
 })
 
-export const voucherModel = model<Voucher>('voucher', voucherSchema)
+export const voucherModel = model<VoucherModel>('voucher', voucherSchema)
 
 export const voucherValid = Joi.object({
     event_id: Joi.string().min(1).required(),

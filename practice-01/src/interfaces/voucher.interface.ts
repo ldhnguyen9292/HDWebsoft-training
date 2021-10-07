@@ -1,8 +1,6 @@
-import { Lifecycle, PayloadCompressionDecoderSettings, PayloadOutput, Request, ResponseToolkit, RouteOptionsPayload } from "@hapi/hapi";
-import mongoose from "mongoose";
-import { Readable } from "stream";
-import { InternalSymbolName } from "typescript";
+import { Document } from "mongoose";
 
+// Interface as Type
 export interface Voucher {
     event_id: object
     name: string
@@ -11,24 +9,9 @@ export interface Voucher {
     code: string
 }
 
-export interface VoucherRequest extends Request {
-    payload: {
-        event_id: string
-        email: string
-    }
-    params: {
-        code: string
-    }
-}
+export interface VoucherModel extends Voucher, Document {}
 
-type Method = (request: VoucherRequest, h: ResponseToolkit, err?: Error) => Lifecycle.ReturnValue;
-export interface VoucherMethod extends Method, Lifecycle.Method { }
-
-export type NewVoucher = (mongoose.Document<any, any, Voucher> & Voucher & {
-    _id: mongoose.Types.ObjectId;
-})[]
-
-export type MidllewarePayload = {
+export interface VoucherPayLoad {
     event_id: string
     email: string
-} | string | object | Readable | Buffer
+}
