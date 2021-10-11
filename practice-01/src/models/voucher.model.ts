@@ -1,9 +1,10 @@
 import Joi from 'joi'
 import { Schema, model } from 'mongoose';
 import { Voucher, VoucherModel } from '../interfaces/voucher.interface';
+import ObjectId = Schema.Types.ObjectId
 
 const voucherSchema = new Schema<Voucher>({
-    event_id: { type: 'ObjectId', ref: "event", required: true },
+    event_id: { type: ObjectId, ref: "event", required: true },
     name: String,
     description: String,
     email: { type: String, required: true },

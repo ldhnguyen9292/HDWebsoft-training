@@ -1,10 +1,10 @@
 import { addEmailToQueue } from './../queues/email.queue';
-import { voucherModel, codeValid } from './../models/voucher.model';
+import { voucherModel } from './../models/voucher.model';
 import Boom from "@hapi/boom";
-import { Voucher, VoucherPayLoad } from './../interfaces/voucher.interface';
-import { Lifecycle } from '@hapi/hapi'
+import { VoucherPayLoad } from './../interfaces/voucher.interface';
+import { Lifecycle, ResponseToolkit } from '@hapi/hapi'
 import { eventModel } from './../models/event.model'
-import mongoose, { ClientSession } from 'mongoose';
+import mongoose, { ClientSession, ObjectId } from 'mongoose';
 import referralCodes from 'referral-codes'
 
 // Get voucher by code
@@ -16,7 +16,7 @@ const findVoucherById: Lifecycle.Method = async (request, h) => {
 }
 
 // Generate voucher
-const generateVoucher = async (event_id: string, email: string, session: ClientSession) => {
+const generateVoucher = async (event_id: ObjectId, email: string, session: ClientSession) => {
     // Random voucher code by using referralCodes lib
     const codeList = referralCodes.generate({
         count: 1,
@@ -24,7 +24,6 @@ const generateVoucher = async (event_id: string, email: string, session: ClientS
         charset: "0123456789",
         prefix: "TT-"
     })
-
     // Create new voucher
     const newVoucher = await voucherModel.create([{
         event_id,
@@ -49,8 +48,7 @@ async function commitWithRetry(session: ClientSession) {
             console.log('UnknownTransactionCommitResult, retrying commit operation ...');
             await commitWithRetry(session);
         } else {
-            console.log('Error during commit ...');
-            throw error;
+            return Promise.reject(error)
         }
     }
 }
@@ -60,42 +58,58 @@ function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Retry transaction
+const runTransactionWithRetry = async (session: ClientSession, event_id: ObjectId, email: string) => {
+    try {
+        session.startTransaction()
+
+        // Minus quantity
+        await eventModel.updateOne({ _id: event_id }, { $inc: { max_quantity: -1 } }).session(session)
+
+        const event = await eventModel.findById(event_id).session(session)
+        // Event exsist?
+        if (!event) {
+            await session.abortTransaction()
+            return Promise.reject('Event not found')
+        }
+        // Check max_quantity
+        if (event.max_quantity < 0) {
+            console.log('quantity error');
+            await session.abortTransaction()
+            return Promise.reject('Quantity of voucher is over')
+        }
+        // Delay random to check transaction
+        // const random = Math.random() * 5000
+        // console.log(random)
+        // await delay(random)
+        // Create voucher
+        const newVoucher = await generateVoucher(event_id, email, session)
+        await commitWithRetry(session)
+        await session.endSession()
+        return Promise.resolve(newVoucher)
+    } catch (error: any) {
+        // If transient error, retry the whole transaction
+        if (error.errorLabels && error.errorLabels.includes("TransientTransactionError")) {
+            console.log("Caught exception during transaction, aborting.")
+            await session.abortTransaction()
+            await runTransactionWithRetry(session, event_id, email)
+        } else {
+            console.log(error)
+            return Promise.reject(error)
+        }
+    }
+}
+
 // Control voucher generation
 const controlVoucherGeneration: Lifecycle.Method = async (request, h) => {
     const { event_id, email } = request.payload as VoucherPayLoad
     const session = await mongoose.startSession()
     try {
-        session.startTransaction()
-        const event = await eventModel.findById(event_id).session(session)
-        // Event exsist?
-        if (!event) {
-            await session.abortTransaction()
-            return Boom.notFound('Event not found')
-        }
-        // Check max_quantity
-        if (event.max_quantity <= 0) {
-            await session.abortTransaction()
-            return Boom.boomify(new Error('Quantity of voucher is over'), { statusCode: 456 })
-        }
-        // Delay random to check transaction
-        // const random = Math.random() * 20000
-        // console.log(random)
-        // await delay(random)
-
-        // Minus quantity
-        event.max_quantity--
-        await event.save()
-
-        // Create voucher
-        const newVoucher = await generateVoucher(event_id, email, session)
-
-        await commitWithRetry(session)
-        await session.endSession()
-        addEmailToQueue(email, newVoucher[0].code)
-        return h.response(newVoucher).code(201)
-    } catch (error) {
-        await session.abortTransaction()
-        return h.response({ message: error }).code(456)
+        const newVoucher = await runTransactionWithRetry(session, event_id, email)
+        // addEmailToQueue(email, newVoucher[0].code)
+        return newVoucher
+    } catch (error: any) {
+        return Boom.boomify(new Error(error), { statusCode: 456 })
     }
 }
 

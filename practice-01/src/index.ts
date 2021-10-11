@@ -4,7 +4,7 @@ import mongoConfig from './config/mongodb.json'
 import { routerPlugin } from './plugins/router.plugin'
 
 const server = Hapi.server({
-    port: process.env.PORT || 8888,
+    port: 8888,
     host: "localhost"
 })
 
