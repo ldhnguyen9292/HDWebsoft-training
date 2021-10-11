@@ -3,9 +3,9 @@ import { editModel } from "./../models/edit.model";
 import moment from 'moment';
 import mongoose, { ClientSession } from 'mongoose'
 
-// const delay = (time: number) => {
-//     return new Promise(resolve => setTimeout(resolve, time))
-// }
+const delay = (time: number) => {
+    return new Promise(resolve => setTimeout(resolve, time))
+}
 
 async function retryCommitTransaction(session: ClientSession) {
     try {
@@ -29,10 +29,12 @@ const isEditing: Lifecycle.Method = async (request, h) => {
     const session = await mongoose.startSession()
     try {
         session.startTransaction()
-        // const time = Math.random() * 20000
-        // console.log(time);
-        // await delay(time)
+
         const result = await editModel.updateOne({ event_id }, { $set: { event_id, user_id } }, { upsert: true }).session(session)
+        // delay
+        const time = Math.random() * 20000
+        console.log(time);
+        await delay(time)
         if (result.matchedCount > 0) {
             session.abortTransaction()
             return h.response({ message: "Event is editing" }).code(409)
@@ -43,9 +45,12 @@ const isEditing: Lifecycle.Method = async (request, h) => {
         await session.endSession()
 
         return h.response({ message: 'Allow to edit event', expireAt: expireTime }).code(200)
-    } catch (error) {
-        console.log(error);
-        return h.response(error).code(500)
+    } catch (error: any) {
+        if (error.errorLabels && error.errorLabels.includes('TransientTransactionError')) {
+            console.log('WriteConflict');
+            return h.response({ message: "Event is editing" }).code(409)
+        } else
+            return h.response(error).code(500)
     }
 }
 
