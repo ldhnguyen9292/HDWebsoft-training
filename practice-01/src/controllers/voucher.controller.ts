@@ -2,10 +2,11 @@ import { addEmailToQueue } from './../queues/email.queue';
 import { voucherModel } from './../models/voucher.model';
 import Boom from "@hapi/boom";
 import { VoucherPayLoad } from './../interfaces/voucher.interface';
-import { Lifecycle, ResponseToolkit } from '@hapi/hapi'
+import { Lifecycle } from '@hapi/hapi'
 import { eventModel } from './../models/event.model'
 import mongoose, { ClientSession, ObjectId } from 'mongoose';
 import referralCodes from 'referral-codes'
+import { Event } from '../interfaces/event.interface';
 
 // Get voucher by code
 const findVoucherById: Lifecycle.Method = async (request, h) => {
@@ -59,45 +60,52 @@ function delay(ms: number) {
 }
 
 // Retry transaction
-const runTransactionWithRetry = async (session: ClientSession, event_id: ObjectId, email: string) => {
-    try {
-        session.startTransaction()
+const runTransactionWithRetry = (session: ClientSession, event_id: ObjectId, email: string) => {
+    return new Promise(async (resolve, reject) => {
+        while (true) {
+            try {
+                session.startTransaction()
+                // Minus quantity
+                const result = await eventModel.updateOne({ _id: event_id }, { $inc: { max_quantity: -1 } }).session(session)
 
-        // Minus quantity
-        await eventModel.updateOne({ _id: event_id }, { $inc: { max_quantity: -1 } }).session(session)
+                const event = await eventModel.findById(event_id).session(session) as Event
+                // Event exsist?
+                if (!event) {
+                    await session.abortTransaction()
+                    reject('Event not found')
+                    break
+                }
+                // Check max_quantity
+                if (event.max_quantity < 0) {
+                    await session.abortTransaction()
+                    reject('Quantity of voucher is over')
+                    break
+                }
 
-        const event = await eventModel.findById(event_id).session(session)
-        // Event exsist?
-        if (!event) {
-            await session.abortTransaction()
-            return Promise.reject('Event not found')
+                // Delay random to check transaction
+                const random = Math.random() * 10000
+                console.log(random)
+                await delay(random)
+
+                // Create voucher
+                const newVoucher = await generateVoucher(event_id, email, session)
+                await commitWithRetry(session)
+                await session.endSession()
+                resolve(newVoucher)
+                break
+            } catch (error: any) {
+                // If transient error, retry the whole transaction
+                if (error.errorLabels && error.errorLabels.includes("TransientTransactionError")) {
+                    console.log("Caught exception during transaction, aborting.")
+                    await session.abortTransaction()
+                    continue
+                } else {
+                    console.log(error)
+                    reject(error)
+                }
+            }
         }
-        // Check max_quantity
-        if (event.max_quantity < 0) {
-            console.log('quantity error');
-            await session.abortTransaction()
-            return Promise.reject('Quantity of voucher is over')
-        }
-        // Delay random to check transaction
-        // const random = Math.random() * 5000
-        // console.log(random)
-        // await delay(random)
-        // Create voucher
-        const newVoucher = await generateVoucher(event_id, email, session)
-        await commitWithRetry(session)
-        await session.endSession()
-        return Promise.resolve(newVoucher)
-    } catch (error: any) {
-        // If transient error, retry the whole transaction
-        if (error.errorLabels && error.errorLabels.includes("TransientTransactionError")) {
-            console.log("Caught exception during transaction, aborting.")
-            await session.abortTransaction()
-            await runTransactionWithRetry(session, event_id, email)
-        } else {
-            console.log(error)
-            return Promise.reject(error)
-        }
-    }
+    })
 }
 
 // Control voucher generation

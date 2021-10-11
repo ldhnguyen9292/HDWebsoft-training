@@ -31,7 +31,7 @@ const isEditing: Lifecycle.Method = async (request, h) => {
         session.startTransaction()
         // const time = Math.random() * 20000
         // console.log(time);
-        // delay(time)
+        // await delay(time)
         const result = await editModel.updateOne({ event_id }, { $set: { event_id, user_id } }, { upsert: true }).session(session)
         if (result.matchedCount > 0) {
             session.abortTransaction()
