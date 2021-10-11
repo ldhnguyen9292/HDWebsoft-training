@@ -1,3 +1,4 @@
+import { isEventEditing } from './../middlewares/edit.middleware';
 import { ServerRoute } from "@hapi/hapi";
 import { editController } from "./../controllers/edit.controller";
 import { EditParams, EditPayload } from "./../interfaces/edit.interface";
@@ -6,6 +7,7 @@ export const editRouter: ServerRoute[] = [{
     path: '/events/{event_id}/editable/me',
     method: "POST",
     options: {
+        pre: [{method: isEventEditing, assign:'Check edit doc exsist'}],
         handler: editController.isEditing,
         description: "Is editing?",
         notes: "Return the edit status and mark user",
