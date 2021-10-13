@@ -66,26 +66,21 @@ const runTransactionWithRetry = (session: ClientSession, event_id: ObjectId, ema
             try {
                 session.startTransaction()
                 // Minus quantity
-                const result = await eventModel.updateOne({ _id: event_id }, { $inc: { max_quantity: -1 } }).session(session)
-
-                const event = await eventModel.findById(event_id).session(session) as Event
-                // Event exsist?
-                if (!event) {
-                    await session.abortTransaction()
-                    reject('Event not found')
-                    break
-                }
-                // Check max_quantity
-                if (event.max_quantity < 0) {
-                    await session.abortTransaction()
-                    reject('Quantity of voucher is over')
-                    break
-                }
-
+                const result = await eventModel.updateOne({
+                    _id: event_id, max_quantity: { $gt: 0 }
+                },
+                    {
+                        $inc: { max_quantity: -1 }
+                    }).session(session)
                 // Delay random to check transaction
                 const random = Math.random() * 10000
                 console.log(random)
                 await delay(random)
+                if (result.matchedCount === 0) {
+                    await session.abortTransaction()
+                    reject('Quantity of voucher is over')
+                    break
+                }
 
                 // Create voucher
                 const newVoucher = await generateVoucher(event_id, email, session)

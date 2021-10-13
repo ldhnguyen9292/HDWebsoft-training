@@ -1,7 +1,8 @@
 import { Lifecycle } from "@hapi/hapi";
 import { editModel } from "./../models/edit.model";
 import moment from 'moment';
-import mongoose, { ClientSession } from 'mongoose'
+import mongoose, { ClientSession } from 'mongoose';
+// import { Edit } from "./../interfaces/edit.interface";
 
 const delay = (time: number) => {
     return new Promise(resolve => setTimeout(resolve, time))
@@ -29,16 +30,12 @@ const isEditing: Lifecycle.Method = async (request, h) => {
     const session = await mongoose.startSession()
     try {
         session.startTransaction()
-
-        const result = await editModel.updateOne({ event_id }, { $set: { event_id, user_id } }, { upsert: true }).session(session)
         // delay
-        const time = Math.random() * 20000
-        console.log(time);
-        await delay(time)
-        if (result.matchedCount > 0) {
-            session.abortTransaction()
-            return h.response({ message: "Event is editing" }).code(409)
-        }
+        // const time = Math.random() * 20000
+        // console.log(time);
+        // await delay(time)
+        await editModel.create([{ event_id, user_id }], { session: session })
+
         const newEdit = await editModel.findOne({ event_id }).session(session)
         const expireTime = moment(newEdit.expireAt).utc(true).format('DD/MM/yyyy HH:mm:ss')
         await retryCommitTransaction(session)
@@ -46,8 +43,8 @@ const isEditing: Lifecycle.Method = async (request, h) => {
 
         return h.response({ message: 'Allow to edit event', expireAt: expireTime }).code(200)
     } catch (error: any) {
-        if (error.errorLabels && error.errorLabels.includes('TransientTransactionError')) {
-            console.log('WriteConflict');
+        if ((error.errorLabels && error.errorLabels.includes('TransientTransactionError')) ||
+            (error.toString().includes('E11000'))) {
             return h.response({ message: "Event is editing" }).code(409)
         } else
             return h.response(error).code(500)
