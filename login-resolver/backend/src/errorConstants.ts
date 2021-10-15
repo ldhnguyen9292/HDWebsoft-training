@@ -1,6 +1,7 @@
 export const errorName = {
     NOTFOUND: 'NOTFOUND',
-    WRONGPASS: 'WRONGPASS'
+    WRONGPASS: 'WRONGPASS',
+    DUPLICATEUSERNAME: "DUPLICATEUSERNAME"
 }
 
 const errorType = {
@@ -11,6 +12,10 @@ const errorType = {
     WRONGPASS: {
         message: "Wrong password",
         statusCode: 401
+    },
+    DUPLICATEUSERNAME: {
+        message: "Duplicate username",
+        statusCode: 409
     }
 }
 

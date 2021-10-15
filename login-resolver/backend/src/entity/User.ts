@@ -1,5 +1,5 @@
 import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "typeorm";
-import { ObjectType, Field, ID } from "type-graphql";
+import { ObjectType, Field, Int } from "type-graphql";
 import { Profile } from "./Profile";
 
 export enum UserRole {
@@ -11,9 +11,9 @@ export enum UserRole {
 @ObjectType()
 export class User extends BaseEntity {
 
-    @Field(() => ID)
+    @Field(() => Int)
     @PrimaryGeneratedColumn()
-    id: number;
+    readonly id?: number;
 
     @Field(() => String)
     @Column({
@@ -34,10 +34,10 @@ export class User extends BaseEntity {
     })
     role: UserRole;
 
-    @Field(() => String)
+    @Field(() => Profile, { nullable: true })
     @OneToOne(() => Profile, { cascade: true })
     @JoinColumn()
-    profile: Profile
+    profile?: Profile
 
     @Field(() => String)
     token?: string
