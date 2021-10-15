@@ -1,9 +1,9 @@
 {
-  "type": "postgres",
+  "type": "",
   "host": "localhost",
   "port": 5432,
-  "username": "postgres",
-  "password": "xqR3tLqq",
+  "username": "",
+  "password": "",
   "database": "login-resolver",
   "synchronize": true,
   "logging": false,
