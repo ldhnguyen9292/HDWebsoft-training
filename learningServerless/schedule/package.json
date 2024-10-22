@@ -20,7 +20,7 @@
     "json-schema-to-ts": "^3.1.1",
     "serverless": "^4.4.4",
     "serverless-esbuild": "^1.54.3",
-    "serverless-offline": "^14.3.2",
+    "serverless-offline": "^14.3.3",
     "serverless-offline-schedule": "^1.0.4",
     "serverless-offline-scheduler": "^0.5.0",
     "sls": "^0.1.0",
